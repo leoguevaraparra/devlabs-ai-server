@@ -20,11 +20,14 @@ lti.setup(
         keysetRoute: '/keys',
         dynRegRoute: '/register',
         cookies: {
-            secure: false, // Set to true in production with HTTPS
-            sameSite: 'None'
+            secure: true, // ALWAYS true for LTI 1.3 in production (HTTPS)
+            sameSite: 'None' // Required for cross-site (iframe) usage
         }
     }
 );
+
+// CRITICAL: Trust proxy for Railway/Heroku/Render to detect HTTPS
+lti.app.enable('trust proxy');
 
 // Register Platform (Moodle)
 // In a real app, this should be done dynamically or via ENV/DB
@@ -51,10 +54,9 @@ const registerPlatform = async () => {
 // On successful Launch
 lti.onConnect(async (token, req, res) => {
     // Redirect to the React App (Frontend)
-    // We can pass the token in the URL or set a cookie, 
-    // but Ltijs sets a session cookie.
-    // For this simple setup, we redirect to root.
-    return res.sendFile(path.join(__dirname, '../dist/index.html'));
+    // We redirect to the URL specified in Env (Netlify) or localhost for dev
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    return lti.redirect(res, frontendUrl);
 });
 
 // API Routes
