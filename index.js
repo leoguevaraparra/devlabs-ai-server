@@ -4,6 +4,7 @@ const path = require('path');
 const routes = require('./routes'); // We will create this next
 const lti = require('ltijs').Provider;
 const Database = require('ltijs-sequelize');
+const cors = require('cors');
 
 // Setup Ltijs with SQLite
 lti.setup(
@@ -28,6 +29,13 @@ lti.setup(
 
 // CRITICAL: Trust proxy for Railway/Heroku/Render to detect HTTPS
 lti.app.enable('trust proxy');
+
+// Enable CORS for Frontend
+lti.app.use(cors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+}));
 
 // Register Platform (Moodle)
 // In a real app, this should be done dynamically or via ENV/DB
