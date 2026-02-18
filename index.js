@@ -30,6 +30,15 @@ lti.setup(
 // CRITICAL: Trust proxy for Railway/Heroku/Render to detect HTTPS
 lti.app.enable('trust proxy');
 
+// GLOBAL DEBUG LOGGER
+lti.app.use((req, res, next) => {
+    console.log(`[INCOMING] ${req.method} ${req.originalUrl}`);
+    console.log(' - Query:', JSON.stringify(req.query));
+    console.log(' - Headers Auth:', req.headers.authorization);
+    console.log(' - Res.locals.token:', res.locals.token ? 'PRESENT' : 'MISSING');
+    next();
+});
+
 // Enable CORS for Frontend
 lti.app.use(cors({
     origin: process.env.FRONTEND_URL || 'http://localhost:5173',
