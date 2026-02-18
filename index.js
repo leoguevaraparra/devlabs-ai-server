@@ -60,11 +60,20 @@ const registerPlatform = async () => {
 };
 
 // On successful Launch
+// On successful Launch
 lti.onConnect(async (token, req, res) => {
     // Redirect to the React App (Frontend)
     // We redirect to the URL specified in Env (Netlify) or localhost for dev
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-    return lti.redirect(res, frontendUrl);
+
+    // Authorization Strategy: Pass the LTIK (Session Key) to the frontend via URL
+    // The frontend will capture this and send it back in the 'Authorization' header
+    // to bypass 3rd party cookie blocking.
+    const ltik = res.locals.ltik;
+    const redirectUrl = new URL(frontendUrl);
+    redirectUrl.searchParams.append('ltik', ltik);
+
+    return lti.redirect(res, redirectUrl.toString());
 });
 
 // API Routes
