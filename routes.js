@@ -3,7 +3,11 @@ const lti = require('ltijs').Provider;
 
 // Middleware to verify LTI Session
 const verifyLti = (req, res, next) => {
-    if (res.locals.token) return next();
+    if (res.locals.token) {
+        console.log('[Middleware] LTI Token verified for user:', res.locals.token.user);
+        return next();
+    }
+    console.log('[Middleware] Unauthorized access attempt. No LTI token found in res.locals.');
     return res.status(401).send('Unauthorized');
 };
 
