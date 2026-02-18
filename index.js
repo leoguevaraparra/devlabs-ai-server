@@ -82,6 +82,7 @@ lti.app.use('/api', routes);
 // Start Server
 const setup = async () => {
     await lti.deploy({ port: process.env.PORT || 3000 });
+    console.log(" [SYSTEM] Servidor LTI Iniciado correctamente (Versión con Logs activados).");
     await registerPlatform();
 };
 
