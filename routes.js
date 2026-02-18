@@ -7,8 +7,15 @@ const verifyLti = (req, res, next) => {
         console.log('[Middleware] LTI Token verified for user:', res.locals.token.user);
         return next();
     }
-    console.log('[Middleware] Unauthorized access attempt. No LTI token found in res.locals.');
-    return res.status(401).send('Unauthorized');
+
+    // DEBUGGING LOGS
+    console.log('[Middleware] Unauthorized access attempt.');
+    console.log('- Headers Auth:', req.headers.authorization);
+    console.log('- Query LTIK:', req.query.ltik);
+    console.log('- Cookies:', req.headers.cookie);
+    console.log('- Res.locals keys:', Object.keys(res.locals));
+
+    return res.status(401).send('Unauthorized: No LTI Session Found');
 };
 
 // GET /api/me - Return user info from LTI Token
