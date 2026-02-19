@@ -7,38 +7,37 @@ const jwt = require('jsonwebtoken');
 const verifyLti = (req, res, next) => {
     // 1. Check if ltijs usage already populated it (via cookies)
     if (res.locals.token) {
-        console.log('[Middleware] LTI Token verified for user (Cookie):', res.locals.token.user);
+        console.log('[Middleware] LTI Token verified via Cookie:', res.locals.token.user);
         return next();
     }
 
     // 2. Fallback: Check for LTIK in query or headers
     const ltik = req.query.ltik || req.headers['ltik'] || (req.headers.authorization && req.headers.authorization.split(' ')[1]);
 
+    console.log('[Middleware] Validating LTIK manually...');
+    console.log(' - Source: ' + (req.query.ltik ? 'Query' : (req.headers['ltik'] ? 'Header:LTIK' : (req.headers.authorization ? 'Header:Auth' : 'NONE'))));
+    console.log(' - LTI_KEY Present:', process.env.LTI_KEY ? 'YES' : 'NO');
+
     if (ltik) {
         try {
-            // Verify LTIK using the LTI_KEY
-            // NOTE: ltijs signs the session token with the LTI_KEY.
-            const decoded = jwt.verify(ltik, process.env.LTI_KEY);
+            if (!process.env.LTI_KEY) throw new Error('LTI_KEY is missing in environment');
 
-            // Re-hydrate locals
+            const decoded = jwt.verify(ltik, process.env.LTI_KEY);
             res.locals.token = decoded;
             res.locals.ltik = ltik;
 
-            console.log('[Middleware] LTI Token verified manually (Header/Query):', decoded.user);
+            console.log('[Middleware] Success! User:', decoded.user);
             return next();
         } catch (err) {
-            console.log('[Middleware] Manual LTIK Verification failed:', err.message);
+            console.error('[Middleware] FAIL:', err.message);
+            // Log part of the token to debug (first 10 chars)
+            console.log(' - Token partial:', ltik.substring(0, 15) + '...');
         }
+    } else {
+        console.warn('[Middleware] No LTIK found in request.');
     }
 
-    // DEBUGGING LOGS
-    console.log('[Middleware] Unauthorized access attempt.');
-    console.log('- Headers Auth:', req.headers.authorization);
-    console.log('- Query LTIK:', req.query.ltik);
-    console.log('- Cookies:', req.headers.cookie ? 'Present' : 'None'); // Don't log full cookie for security
-    console.log('- Res.locals keys:', Object.keys(res.locals));
-
-    return res.status(401).send('Unauthorized: No LTI Session Found');
+    return res.status(401).send('Unauthorized: Invalid or Missing LTI Session');
 };
 
 // GET /api/me - Return user info from LTI Token
