@@ -100,6 +100,17 @@ lti.onConnect(async (token, req, res) => {
 // API Routes
 lti.app.use('/api', routes);
 
+// Custom Invalid Token Handler to expose why it failed
+lti.onInvalidToken((req, res, next) => {
+    console.error('[LTI] Internal invalidToken trigger! Error:', res.locals.err);
+    return res.status(401).send(res.locals.err);
+});
+
+lti.onSessionTimeout((req, res, next) => {
+    console.error('[LTI] Internal sessionTimeout trigger! Error:', res.locals.err);
+    return res.status(401).send(res.locals.err);
+});
+
 // Start Server
 const setup = async () => {
     await lti.deploy({ port: process.env.PORT || 3000 });
