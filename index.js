@@ -21,6 +21,7 @@ lti.setup(
         loginRoute: '/login',
         keysetRoute: '/keys',
         dynRegRoute: '/register',
+        ltiaas: true, // CRITICAL: LTI as a Service mode. Ignores cookies and validates strictly via ltik parameter, perfect for SPAs.
         cookies: {
             secure: true, // ALWAYS true for LTI 1.3 in production (HTTPS)
             sameSite: 'None' // Required for cross-site (iframe) usage
@@ -39,12 +40,6 @@ lti.app.use((req, res, next) => {
     console.log(' - Res.locals.token:', res.locals.token ? 'PRESENT' : 'MISSING');
     next();
 });
-
-// Whitelist API routes so ltijs doesn't block them if cookies are blocked by browser.
-// This allows our custom routes.js to validate the `ltik` query parameter manually.
-lti.whitelist(
-    { route: new RegExp(/^\/api\/.*/), method: 'ALL' }
-);
 
 // Enable CORS for Frontend
 const frontendUrlEnv = process.env.FRONTEND_URL || 'http://localhost:5173';
