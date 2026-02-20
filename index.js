@@ -10,13 +10,15 @@ const cors = require('cors');
 // Setup Ltijs with SQLite
 lti.setup(
     process.env.LTI_KEY,
-    {
+    {   // Parameter 2: Database Configuration
         plugin: new Database('lti_db', 'user', 'pass', {
             host: 'localhost',
             dialect: 'sqlite',
             storage: 'database.sqlite', // File location for SQLite DB
             logging: false
-        }),
+        })
+    },
+    {   // Parameter 3: Options
         appRoute: '/',
         loginRoute: '/login',
         keysetRoute: '/keys',
