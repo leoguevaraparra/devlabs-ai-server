@@ -40,6 +40,12 @@ lti.app.use((req, res, next) => {
     next();
 });
 
+// Whitelist API routes so ltijs doesn't block them if cookies are blocked by browser.
+// This allows our custom routes.js to validate the `ltik` query parameter manually.
+lti.whitelist(
+    { route: new RegExp(/^\/api\/.*/), method: 'ALL' }
+);
+
 // Enable CORS for Frontend
 const frontendUrlEnv = process.env.FRONTEND_URL || 'http://localhost:5173';
 const cleanFrontendUrl = frontendUrlEnv.replace(/\/$/, ''); // Remove trailing slash if present
