@@ -41,8 +41,11 @@ lti.app.use((req, res, next) => {
 });
 
 // Enable CORS for Frontend
+const frontendUrlEnv = process.env.FRONTEND_URL || 'http://localhost:5173';
+const cleanFrontendUrl = frontendUrlEnv.replace(/\/$/, ''); // Remove trailing slash if present
+
 lti.app.use(cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: cleanFrontendUrl,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
