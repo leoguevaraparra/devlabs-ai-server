@@ -45,6 +45,7 @@ router.get('/me', verifyLti, (req, res) => {
     const token = res.locals.token;
     return res.json({
         userId: token.user,
+        userInfo: token.userInfo,
         roles: token.roles,
         context: token.platformContext,
         platformId: token.iss
