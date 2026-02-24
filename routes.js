@@ -58,11 +58,9 @@ router.post('/grade', verifyLti, async (req, res) => {
         const idToken = res.locals.token; // IdToken
         const score = req.body.score; // 0-100
 
-        // Convert to 0.0 - 1.0
-        const grade = score / 100;
-
         const gradeObj = {
-            scoreGiven: grade,
+            scoreGiven: score,
+            scoreMaximum: 100,
             activityProgress: 'Completed',
             gradingProgress: 'FullyGraded'
         };
