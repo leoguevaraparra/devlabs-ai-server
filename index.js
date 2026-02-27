@@ -38,7 +38,9 @@ lti.app.enable('trust proxy');
 lti.app.use((req, res, next) => {
     console.log(`[INCOMING] ${req.method} ${req.originalUrl}`);
     console.log(' - Query:', JSON.stringify(req.query));
-    console.log(' - Headers Auth:', req.headers.authorization);
+    // Ocultar token completo en logs por seguridad
+    const auth = req.headers.authorization;
+    console.log(' - Headers Auth:', auth ? `${auth.substring(0, 15)}...` : 'NONE');
     console.log(' - Res.locals.token:', res.locals.token ? 'PRESENT' : 'MISSING');
     next();
 });
