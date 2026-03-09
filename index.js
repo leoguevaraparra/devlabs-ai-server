@@ -46,13 +46,11 @@ lti.app.use((req, res, next) => {
 });
 
 // Enable CORS for allowed frontends
-const defaultFrontend = process.env.FRONTEND_URL || 'http://localhost:5173';
 const allowedOrigins = [
-    defaultFrontend.replace(/\/$/, ''),
-    process.env.FRONTEND_URL_M1_S1 ? process.env.FRONTEND_URL_M1_S1.replace(/\/$/, '') : 'http://localhost:5173',
-    process.env.FRONTEND_URL_M1_S2 ? process.env.FRONTEND_URL_M1_S2.replace(/\/$/, '') : 'http://localhost:5174',
-    process.env.FRONTEND_URL_M1_S3 ? process.env.FRONTEND_URL_M1_S3.replace(/\/$/, '') : 'http://localhost:5175'
-];
+    process.env.FRONTEND_URL_M1_S1 ? process.env.FRONTEND_URL_M1_S1.replace(/\/$/, '') : '',
+    process.env.FRONTEND_URL_M1_S2 ? process.env.FRONTEND_URL_M1_S2.replace(/\/$/, '') : '',
+    process.env.FRONTEND_URL_M1_S3 ? process.env.FRONTEND_URL_M1_S3.replace(/\/$/, '') : ''
+].filter(Boolean); // Remove empty strings
 
 lti.app.use(cors({
     origin: function (origin, callback) {
@@ -105,17 +103,25 @@ lti.onConnect(async (token, req, res) => {
     const labId = customParams.lab_id;
     console.log(` - Requested Lab ID (via custom parameters): ${labId || 'NONE'}`);
 
+    if (!labId) {
+        console.error('[LTI] Lanzamiento fallido: Moodle no envio el parámetro lab_id.');
+        return res.status(400).send('Error: Contacte a su profesor. Esta actividad no tiene configurado el parámetro "lab_id" que indica a qué laboratorio redirigir.');
+    }
+
     // 2. Determinar la URL destino en base al lab_id
-    let targetUrlStr = process.env.FRONTEND_URL || 'http://localhost:5173'; // Default fallback
+    let targetUrlStr = null;
     
     if (labId === 'M1-S1' || labId === 'm1-s1') {
-        targetUrlStr = process.env.FRONTEND_URL_M1_S1 || 'http://localhost:5173';
+        targetUrlStr = process.env.FRONTEND_URL_M1_S1;
     } else if (labId === 'M1-S2' || labId === 'm1-s2') {
-        targetUrlStr = process.env.FRONTEND_URL_M1_S2 || 'http://localhost:5174';
+        targetUrlStr = process.env.FRONTEND_URL_M1_S2;
     } else if (labId === 'M1-S3' || labId === 'm1-s3') {
-        targetUrlStr = process.env.FRONTEND_URL_M1_S3 || 'http://localhost:5175';
-    } else if (labId) {
-        console.warn(`[LTI] Obtenido lab_id=${labId} pero no hay URL configurada específica, usando Default.`);
+        targetUrlStr = process.env.FRONTEND_URL_M1_S3;
+    }
+
+    if (!targetUrlStr) {
+        console.error(`[LTI] Lanzamiento fallido: No se encontró una URL de entorno para el lab_id: ${labId}`);
+        return res.status(500).send(`Error de configuración: El laboratorio ${labId} no tiene una URL asociada en el servidor LTI.`);
     }
 
     try {
