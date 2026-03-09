@@ -45,12 +45,25 @@ lti.app.use((req, res, next) => {
     next();
 });
 
-// Enable CORS for Frontend
-const frontendUrlEnv = process.env.FRONTEND_URL || 'http://localhost:5173';
-const cleanFrontendUrl = frontendUrlEnv.replace(/\/$/, ''); // Remove trailing slash if present
+// Enable CORS for allowed frontends
+const defaultFrontend = process.env.FRONTEND_URL || 'http://localhost:5173';
+const allowedOrigins = [
+    defaultFrontend.replace(/\/$/, ''),
+    process.env.FRONTEND_URL_M1_S1 ? process.env.FRONTEND_URL_M1_S1.replace(/\/$/, '') : 'http://localhost:5173',
+    process.env.FRONTEND_URL_M1_S2 ? process.env.FRONTEND_URL_M1_S2.replace(/\/$/, '') : 'http://localhost:5174',
+    process.env.FRONTEND_URL_M1_S3 ? process.env.FRONTEND_URL_M1_S3.replace(/\/$/, '') : 'http://localhost:5175'
+];
 
 lti.app.use(cors({
-    origin: cleanFrontendUrl,
+    origin: function (origin, callback) {
+        // En desarrollo o LTI flow it can be undefined
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            console.warn(`[CORS] Rejected Origin: ${origin}`);
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
@@ -78,27 +91,48 @@ const registerPlatform = async () => {
 };
 
 // On successful Launch
-// On successful Launch
-// On successful Launch
 lti.onConnect(async (token, req, res) => {
     console.log('[LTI] Connection Successful!');
     console.log(' - Token User:', token.user);
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-
+    
     // Authorization Strategy: Pass the LTIK (Session Key) to the frontend via URL
     const ltik = res.locals.ltik;
     console.log(' - Generated LTIK:', ltik ? 'YES' : 'NO (Undefined)');
 
-    const redirectUrl = new URL(frontendUrl);
+    // 1. Obtener parámetros personalizados enviados desde Moodle
+    // El profesor configurará por ej: lab_id=M1-S2 en los 'Custom parameters'
+    const customParams = res.locals.context?.custom || {};
+    const labId = customParams.lab_id;
+    console.log(` - Requested Lab ID (via custom parameters): ${labId || 'NONE'}`);
 
-    if (ltik) {
-        redirectUrl.searchParams.append('ltik', ltik);
-    } else {
-        console.warn('WARNING: No LTIK found in res.locals. Redirecting without token.');
+    // 2. Determinar la URL destino en base al lab_id
+    let targetUrlStr = process.env.FRONTEND_URL || 'http://localhost:5173'; // Default fallback
+    
+    if (labId === 'M1-S1' || labId === 'm1-s1') {
+        targetUrlStr = process.env.FRONTEND_URL_M1_S1 || 'http://localhost:5173';
+    } else if (labId === 'M1-S2' || labId === 'm1-s2') {
+        targetUrlStr = process.env.FRONTEND_URL_M1_S2 || 'http://localhost:5174';
+    } else if (labId === 'M1-S3' || labId === 'm1-s3') {
+        targetUrlStr = process.env.FRONTEND_URL_M1_S3 || 'http://localhost:5175';
+    } else if (labId) {
+        console.warn(`[LTI] Obtenido lab_id=${labId} pero no hay URL configurada específica, usando Default.`);
     }
 
-    console.log(' - Redirecting to:', redirectUrl.toString());
-    return lti.redirect(res, redirectUrl.toString());
+    try {
+        const redirectUrl = new URL(targetUrlStr);
+
+        if (ltik) {
+            redirectUrl.searchParams.append('ltik', ltik);
+        } else {
+            console.warn('WARNING: No LTIK found in res.locals. Redirecting without token.');
+        }
+
+        console.log(` - Redirecting to [${labId || 'Default'}]:`, redirectUrl.toString());
+        return lti.redirect(res, redirectUrl.toString());
+    } catch (e) {
+        console.error('[LTI] Error construyendo URL de redirección:', e);
+        return res.status(500).send('Error interno en la redirección LTI');
+    }
 });
 
 // API Routes
