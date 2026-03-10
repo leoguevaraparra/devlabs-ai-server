@@ -14,7 +14,7 @@ lti.setup(
         plugin: new Database('lti_db', 'user', 'pass', {
             host: 'localhost',
             dialect: 'sqlite',
-            storage: 'database.sqlite', // File location for SQLite DB
+            storage: process.env.DB_STORAGE_PATH || 'database.sqlite', // File location for SQLite DB
             logging: false
         })
     },

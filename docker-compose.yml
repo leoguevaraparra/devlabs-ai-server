@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  devlabs-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: devlabs-server
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    volumes:
+      # Montar un volumen para que la base de datos SQLite no se borre al reiniciar
+      - server_db_data:/app/database
+    environment:
+      # Sobreescribe la ruta de la base de datos para que quede en el volumen
+      - DB_STORAGE_PATH=/app/database/database.sqlite
+
+volumes:
+  server_db_data:
